@@ -35,6 +35,13 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 				.scopes("write", "read")
 				.accessTokenValiditySeconds(6 * 60 * 60) // 6 horas (padrão é 12 horas)
 				.refreshTokenValiditySeconds(60 * 24 * 60 * 60) // 60 dias
+				
+				.and()
+				.withClient("faturamento")
+				.secret(passwordEncoder.encode("faturamento123"))
+				.authorizedGrantTypes("client_credentials")
+				.scopes("write", "read")
+				
 				.and()
 				  .withClient("checktoken")
 				    .secret(passwordEncoder.encode("check123"));
