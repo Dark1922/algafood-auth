@@ -1,7 +1,10 @@
 package com.algaworks.algafoodauth;
 
+import java.util.Arrays;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,6 +13,10 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.A
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.CompositeTokenGranter;
+import org.springframework.security.oauth2.provider.TokenGranter;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.redis.RedisTokenStore;
 
 
 @Configuration
@@ -24,6 +31,9 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 	
 	@Autowired
 	private UserDetailsService userDetailsService;
+	
+	@Autowired
+	private RedisConnectionFactory redisConnectionFactory;
 	
 	@Override
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
@@ -47,7 +57,13 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 				 .secret("food123")
 				 .authorizedGrantTypes("authorization_code")
 				 .scopes("write", "read")
-				 .redirectUris("http://aplicacap-cliente")
+				 .redirectUris("http://www.foodanalytics.local:8082")
+				 
+					.and()
+					 .withClient("webadmin")
+					 .authorizedGrantTypes("impliciti")
+					 .scopes("write", "read")
+					 .redirectUris("http://aplicacao-cliente")
 				
 				.and()
 				   .withClient("checktoken")
@@ -56,10 +72,17 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 	
 	@Override
 	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-		endpoints.authenticationManager(authenticationManager)//endpoint de gerar o token
+		endpoints
+		.authenticationManager(authenticationManager)//endpoint de gerar o token
 		.userDetailsService(userDetailsService)//tava nulo ent colcoamos o userDetailsService
-		.reuseRefreshTokens(false);
-		
+		.reuseRefreshTokens(false)
+		.tokenStore(redisTokenStore())
+		.tokenGranter(tokenGranter(endpoints));
+		 
+	}
+
+	private TokenStore redisTokenStore() {
+		return new RedisTokenStore(redisConnectionFactory);
 	}
 	
 	@Override
@@ -68,5 +91,15 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 		security.checkTokenAccess("permitAll()"); //permite acesso sem o acesso do base auth
 	}
 
+	private TokenGranter tokenGranter(AuthorizationServerEndpointsConfigurer endpoints) {
+		var pkceAuthorizationCodeTokenGranter = new PkceAuthorizationCodeTokenGranter(endpoints.getTokenServices(),
+				endpoints.getAuthorizationCodeServices(), endpoints.getClientDetailsService(),
+				endpoints.getOAuth2RequestFactory());
+		
+		var granters = Arrays.asList(
+				pkceAuthorizationCodeTokenGranter, endpoints.getTokenGranter());
+		
+		return new CompositeTokenGranter(granters);
+	}
 }
  
