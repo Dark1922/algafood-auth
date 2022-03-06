@@ -91,7 +91,7 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 		//jwtAccessTokenConverter.setSigningKey("DB4AEF4719809709E560ED8DE2F9C77B886B963B28BA20E9A8A621BBD4ABA400");
 		
 		//chave assimetrica
-		    var jksResource = new ClassPathResource(jwtKeyStoreProperties.getPath());
+		  var jksResource = new ClassPathResource(jwtKeyStoreProperties.getPath());
 		    var keyStorePass = jwtKeyStoreProperties.getPassword();
 		    var keyPairAlias = jwtKeyStoreProperties.getKeypairAlias();
 		    
@@ -99,13 +99,15 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 		    var keyPair = keyStoreKeyFactory.getKeyPair(keyPairAlias);
 		    
 		    jwtAccessTokenConverter.setKeyPair(keyPair);
-		return jwtAccessTokenConverter;
+		    
+		    return jwtAccessTokenConverter;
 	}
 	
 	@Override
 	public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
 	//	security.checkTokenAccess("isAuthenticated()");//para acessar o endpoint de check token tem que está autenticado
-		security.checkTokenAccess("permitAll()"); //permite acesso sem o acesso do base auth
+		security.checkTokenAccess("permitAll()")//permite acesso sem o acesso do base auth
+		.tokenKeyAccess("permitAll()"); 
 	}
 
 	private TokenGranter tokenGranter(AuthorizationServerEndpointsConfigurer endpoints) {
