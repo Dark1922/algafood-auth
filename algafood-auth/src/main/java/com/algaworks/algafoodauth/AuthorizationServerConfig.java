@@ -3,8 +3,9 @@ package com.algaworks.algafoodauth;
 import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,7 +16,8 @@ import org.springframework.security.oauth2.config.annotation.web.configurers.Aut
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.CompositeTokenGranter;
 import org.springframework.security.oauth2.provider.TokenGranter;
-import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory;
 
 
 @Configuration
@@ -31,8 +33,6 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 	@Autowired
 	private UserDetailsService userDetailsService;
 	
-	@Autowired
-	private RedisConnectionFactory redisConnectionFactory;
 	
 	@Override
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
@@ -63,7 +63,7 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 					 .authorizedGrantTypes("impliciti")
 					 .scopes("write", "read")
 					 .redirectUris("http://aplicacao-cliente")
-				
+				 
 				.and()
 				   .withClient("checktoken")
 				   .secret(passwordEncoder.encode("check123"));
@@ -75,13 +75,27 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 		.authenticationManager(authenticationManager)//endpoint de gerar o token
 		.userDetailsService(userDetailsService)//tava nulo ent colcoamos o userDetailsService
 		.reuseRefreshTokens(false)
-		.tokenStore(redisTokenStore())
+		.accessTokenConverter(jwtAccessTokenConverter()) //conversos de access token jwt
 		.tokenGranter(tokenGranter(endpoints));
 		 
 	}
 
-	private TokenStore redisTokenStore() {
-		return new RedisTokenStore(redisConnectionFactory);
+	@Bean
+	public JwtAccessTokenConverter jwtAccessTokenConverter() {
+		JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
+		
+		//chave simetrica
+		//jwtAccessTokenConverter.setSigningKey("DB4AEF4719809709E560ED8DE2F9C77B886B963B28BA20E9A8A621BBD4ABA400");
+		
+		//chave assimetrica
+		var  jksResource = new ClassPathResource("keystorage/algafood.jks");
+		var keyStoragePass = "123456";//senha do arquivo jks
+		var keyPairAlias = "algafood";
+		var keyStorageKeyFactory = new KeyStoreKeyFactory(jksResource, keyStoragePass.toCharArray());
+		var keyPair = keyStorageKeyFactory.getKeyPair(keyPairAlias);
+		
+		jwtAccessTokenConverter.setKeyPair(keyPair);
+		return jwtAccessTokenConverter;
 	}
 	
 	@Override
