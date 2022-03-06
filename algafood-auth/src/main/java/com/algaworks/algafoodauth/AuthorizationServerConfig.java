@@ -33,6 +33,9 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 	@Autowired
 	private UserDetailsService userDetailsService;
 	
+	@Autowired
+	private JwtKeyStoreProperties jwtKeyStoreProperties;  
+	
 	
 	@Override
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
@@ -88,13 +91,14 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 		//jwtAccessTokenConverter.setSigningKey("DB4AEF4719809709E560ED8DE2F9C77B886B963B28BA20E9A8A621BBD4ABA400");
 		
 		//chave assimetrica
-		var  jksResource = new ClassPathResource("keystorage/algafood.jks");
-		var keyStoragePass = "123456";//senha do arquivo jks
-		var keyPairAlias = "algafood";
-		var keyStorageKeyFactory = new KeyStoreKeyFactory(jksResource, keyStoragePass.toCharArray());
-		var keyPair = keyStorageKeyFactory.getKeyPair(keyPairAlias);
-		
-		jwtAccessTokenConverter.setKeyPair(keyPair);
+		    var jksResource = new ClassPathResource(jwtKeyStoreProperties.getPath());
+		    var keyStorePass = jwtKeyStoreProperties.getPassword();
+		    var keyPairAlias = jwtKeyStoreProperties.getKeypairAlias();
+		    
+		    var keyStoreKeyFactory = new KeyStoreKeyFactory(jksResource, keyStorePass.toCharArray());
+		    var keyPair = keyStoreKeyFactory.getKeyPair(keyPairAlias);
+		    
+		    jwtAccessTokenConverter.setKeyPair(keyPair);
 		return jwtAccessTokenConverter;
 	}
 	
