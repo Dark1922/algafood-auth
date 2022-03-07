@@ -11,6 +11,8 @@ import lombok.Getter;
 @Getter
 public class AuthUser extends User {
 	
+	private static final long serialVersionUID = 1L;
+	
 	private String fullName;
 
 	public AuthUser(Usuario usuario) {
@@ -19,6 +21,6 @@ public class AuthUser extends User {
 		this.fullName = usuario.getNome();
 	}
 
-	private static final long serialVersionUID = 1L;
+	
 
 }
