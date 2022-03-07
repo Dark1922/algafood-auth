@@ -1,4 +1,4 @@
-package com.algaworks.algafoodauth;
+package com.algaworks.algafoodauth.core;
 
 import java.util.Arrays;
 
@@ -16,6 +16,9 @@ import org.springframework.security.oauth2.config.annotation.web.configurers.Aut
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.CompositeTokenGranter;
 import org.springframework.security.oauth2.provider.TokenGranter;
+import org.springframework.security.oauth2.provider.approval.ApprovalStore;
+import org.springframework.security.oauth2.provider.approval.TokenApprovalStore;
+import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory;
 
@@ -79,8 +82,17 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 		.userDetailsService(userDetailsService)//tava nulo ent colcoamos o userDetailsService
 		.reuseRefreshTokens(false)
 		.accessTokenConverter(jwtAccessTokenConverter()) //conversos de access token jwt
+		.approvalStore(approvalStore(endpoints.getTokenStore())) //armazenamento de aprovações
 		.tokenGranter(tokenGranter(endpoints));
 		 
+	}
+	
+	private ApprovalStore approvalStore(TokenStore tokenStore) {
+		//permite que o token store com oq o authorization server configue um handler que permite a aprovação
+		//granular dos escopos
+		var approvalStore = new TokenApprovalStore();
+		approvalStore.setTokenStore(tokenStore);
+		return approvalStore;
 	}
 
 	@Bean
