@@ -18,6 +18,7 @@ import org.springframework.security.oauth2.provider.CompositeTokenGranter;
 import org.springframework.security.oauth2.provider.TokenGranter;
 import org.springframework.security.oauth2.provider.approval.ApprovalStore;
 import org.springframework.security.oauth2.provider.approval.TokenApprovalStore;
+import org.springframework.security.oauth2.provider.token.TokenEnhancerChain;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory;
@@ -47,7 +48,7 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 				 .withClient("algafood-web")
 				 .secret(passwordEncoder.encode("web123"))
 				 .authorizedGrantTypes("password", "refresh_token")
-				 .scopes("write", "read")
+				 .scopes("WRITE", "READ")
 				 .accessTokenValiditySeconds(6 * 60 * 60) // 6 horas (padrão é 12 horas)
 				.refreshTokenValiditySeconds(60 * 24 * 60 * 60) // 60 dias
 				  
@@ -55,19 +56,19 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 				 .withClient("faturamento")
 				 .secret(passwordEncoder.encode("faturamento123"))
 				 .authorizedGrantTypes("client_credentials")
-				 .scopes("write", "read")
+				 .scopes("WRITE", "READ")
 				 
 				.and()
 				 .withClient("foodanalytics")
 				 .secret("food123")
 				 .authorizedGrantTypes("authorization_code")
-				 .scopes("write", "read")
+				 .scopes("WRITE", "READ")
 				 .redirectUris("http://www.foodanalytics.local:8082")
 				 
 					.and()
 					 .withClient("webadmin")
 					 .authorizedGrantTypes("impliciti")
-					 .scopes("write", "read")
+					 .scopes("WRITE", "READ")
 					 .redirectUris("http://aplicacao-cliente")
 				 
 				.and()
@@ -77,10 +78,14 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 	
 	@Override
 	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+		var enchancerChain =  new TokenEnhancerChain(); // cadeia de enchancer q incrementa o token
+		enchancerChain.setTokenEnhancers(Arrays.asList(
+				new JwtCustomClaimsTokenEnhancer(),jwtAccessTokenConverter()));
 		endpoints
 		.authenticationManager(authenticationManager)//endpoint de gerar o token
 		.userDetailsService(userDetailsService)//tava nulo ent colcoamos o userDetailsService
 		.reuseRefreshTokens(false)
+				.tokenEnhancer(enchancerChain)
 		.accessTokenConverter(jwtAccessTokenConverter()) //conversos de access token jwt
 		.approvalStore(approvalStore(endpoints.getTokenStore())) //armazenamento de aprovações
 		.tokenGranter(tokenGranter(endpoints));
