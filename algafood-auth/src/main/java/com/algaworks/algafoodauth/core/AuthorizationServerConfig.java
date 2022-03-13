@@ -23,13 +23,12 @@ import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory;
 
+import javax.sql.DataSource;
+
 
 @Configuration
 @EnableAuthorizationServer
 public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAdapter {
-	
-	@Autowired
-	private PasswordEncoder passwordEncoder;
 	
 	@Autowired
 	private AuthenticationManager authenticationManager;
@@ -38,42 +37,16 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 	private UserDetailsService userDetailsService;
 	
 	@Autowired
-	private JwtKeyStoreProperties jwtKeyStoreProperties;  
+	private JwtKeyStoreProperties jwtKeyStoreProperties;
+
+	@Autowired
+	private DataSource dataSource;
 	
 	
 	@Override
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-		clients
-			.inMemory()
-				 .withClient("algafood-web")
-				 .secret(passwordEncoder.encode("web123"))
-				 .authorizedGrantTypes("password", "refresh_token")
-				 .scopes("WRITE", "READ")
-				 .accessTokenValiditySeconds(6 * 60 * 60) // 6 horas (padrão é 12 horas)
-				.refreshTokenValiditySeconds(60 * 24 * 60 * 60) // 60 dias
-				  
-				.and()
-				 .withClient("faturamento")
-				 .secret(passwordEncoder.encode("faturamento123"))
-				 .authorizedGrantTypes("client_credentials")
-				 .scopes("WRITE", "READ")
-				 
-				.and()
-				 .withClient("foodanalytics")
-				 .secret("food123")
-				 .authorizedGrantTypes("authorization_code")
-				 .scopes("WRITE", "READ")
-				 .redirectUris("http://www.foodanalytics.local:8082")
-				 
-					.and()
-					 .withClient("webadmin")
-					 .authorizedGrantTypes("impliciti")
-					 .scopes("WRITE", "READ")
-					 .redirectUris("http://aplicacao-cliente")
-				 
-				.and()
-				   .withClient("checktoken")
-				   .secret(passwordEncoder.encode("check123"));
+		clients.jdbc(dataSource);
+
 	}
 	
 	@Override
